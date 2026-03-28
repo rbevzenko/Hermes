@@ -1,26 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import AIPanel from './AIPanel';
 
-function StatusBadge({ status }) {
-  const map = {
-    known: { className: 'badge-known', label: '🟢 Знаю' },
-    learning: { className: 'badge-learning', label: '🟡 Учу' },
-    difficult: { className: 'badge-difficult', label: '🔴 Сложное' },
-    new: { className: 'badge-new', label: '◯ Новое' },
-  };
-  const { className, label } = map[status] || map.new;
-  return <span className={`badge ${className}`}>{label}</span>;
-}
+const STATUS_COLORS = {
+  known:     { bg: '#22c55e', label: '✓ Знаю',    key: '1' },
+  learning:  { bg: '#f59e0b', label: '~ Учу',     key: '2' },
+  difficult: { bg: '#ef4444', label: '✗ Сложное', key: '3' },
+};
 
 export default function FlashCard({ words, onWordStatus, getWordStatus, session, onAnswer, onSkip, onEnd }) {
   const [flipped, setFlipped] = useState(false);
-  const [aiWord, setAiWord] = useState(null);
-  const [shakeKey, setShakeKey] = useState(0);
+  const [aiWord, setAiWord]   = useState(null);
 
   const currentIndex = session?.currentIndex ?? 0;
-  const word = words[currentIndex];
+  const word  = words[currentIndex];
   const total = words.length;
-  const progress = total > 0 ? ((currentIndex) / total) * 100 : 0;
+  const progress = total > 0 ? (currentIndex / total) * 100 : 0;
 
   const flip = useCallback(() => setFlipped(f => !f), []);
 
@@ -29,69 +23,47 @@ export default function FlashCard({ words, onWordStatus, getWordStatus, session,
     onWordStatus(word.id, status);
     onAnswer(word.id, status !== 'difficult');
     setFlipped(false);
-    setTimeout(() => {}, 0);
   }, [word, onWordStatus, onAnswer]);
 
-  const handleNext = useCallback(() => {
-    setFlipped(false);
-    onAnswer(word?.id, true);
-  }, [word, onAnswer]);
+  useEffect(() => { setFlipped(false); }, [currentIndex]);
 
-  const handlePrev = useCallback(() => {
-    setFlipped(false);
-    onSkip();
-  }, [onSkip]);
-
-  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      switch (e.key) {
-        case ' ':
-          e.preventDefault();
-          flip();
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          handleNext();
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          handlePrev();
-          break;
-        case '1':
-          markStatus('known');
-          break;
-        case '2':
-          markStatus('learning');
-          break;
-        case '3':
-          markStatus('difficult');
-          break;
-        default:
-          break;
-      }
+      if (e.key === ' ')          { e.preventDefault(); flip(); }
+      else if (e.key === '1')     markStatus('known');
+      else if (e.key === '2')     markStatus('learning');
+      else if (e.key === '3')     markStatus('difficult');
+      else if (e.key === 'ArrowRight') { onAnswer(word?.id, true); setFlipped(false); }
+      else if (e.key === 'ArrowLeft')  { onSkip(); setFlipped(false); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [flip, handleNext, handlePrev, markStatus]);
+  }, [flip, markStatus, onAnswer, onSkip, word]);
 
-  // Reset flip when word changes
-  useEffect(() => {
-    setFlipped(false);
-  }, [currentIndex]);
-
+  /* ── Session end ─────────────────────────────────────────── */
   if (!word) {
     return (
-      <div className="text-center p-6 animate-fade-in">
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏛️</div>
-        <h2 style={{ fontFamily: 'IM Fell English, serif', fontSize: '2rem', color: 'var(--terracotta)', marginBottom: '1rem' }}>
+      <div style={{
+        minHeight: 'calc(100vh - 56px)',
+        background: 'var(--indigo)',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        gap: 24, padding: 32, textAlign: 'center',
+      }}>
+        <div style={{ fontSize: '4rem' }}>🏛️</div>
+        <div style={{ fontFamily: 'IM Fell English, serif', fontSize: '2.2rem', color: '#fff' }}>
           Сессия завершена!
-        </h2>
-        <p style={{ marginBottom: '2rem', fontSize: '1.1rem', color: '#666' }}>
-          Правильно: {session?.correct} / {total} · Серия: {session?.maxStreak}
-        </p>
-        <button className="btn btn-primary btn-lg" onClick={onEnd}>
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.2rem' }}>
+          Правильно: {session?.correct} / {total} &nbsp;·&nbsp; Серия: {session?.maxStreak}
+        </div>
+        <button onClick={onEnd} style={{
+          marginTop: 8, padding: '14px 40px',
+          background: 'var(--terracotta)', color: '#fff',
+          border: 'none', borderRadius: 10, fontSize: '1.2rem',
+          fontFamily: 'Crimson Pro, serif', cursor: 'pointer',
+        }}>
           Завершить
         </button>
       </div>
@@ -101,108 +73,163 @@ export default function FlashCard({ words, onWordStatus, getWordStatus, session,
   const wordStatus = getWordStatus(word.id);
 
   return (
-    <div className="animate-fade-in" style={{ position: 'relative' }}>
-      {/* Progress */}
-      <div className="progress-bar">
-        <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
+    <div style={{
+      minHeight: 'calc(100vh - 56px)',
+      background: 'var(--indigo)',
+      display: 'flex', flexDirection: 'column',
+    }}>
+
+      {/* ── Progress bar ── */}
+      <div style={{ height: 4, background: 'rgba(255,255,255,0.15)' }}>
+        <div style={{
+          height: '100%', width: `${progress}%`,
+          background: 'var(--terracotta-light)',
+          transition: 'width 0.3s ease',
+        }} />
       </div>
 
-      {/* Session stats */}
-      <div className="session-bar">
-        <span className="session-stat">
-          📄 {currentIndex + 1} / {total}
+      {/* ── Top bar ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 20px', color: 'rgba(255,255,255,0.65)', fontSize: '0.95rem',
+      }}>
+        <span>{currentIndex + 1} / {total}</span>
+        <span style={{
+          fontSize: '0.8rem', padding: '3px 10px', borderRadius: 12,
+          background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)',
+        }}>
+          {word.theme} · ур. {word.level}
         </span>
-        <span className="session-stat">
-          ✅ {session?.correct ?? 0}
-        </span>
-        <span className="session-stat">
-          🔥 {session?.streak ?? 0}
-        </span>
-        <span style={{ marginLeft: 'auto' }}>
-          <StatusBadge status={wordStatus} />
-        </span>
+        <span>✅ {session?.correct ?? 0} &nbsp; 🔥 {session?.streak ?? 0}</span>
       </div>
 
-      {/* Card */}
-      <div className="flashcard-scene" onClick={flip} role="button" aria-label="Нажмите чтобы перевернуть карточку" tabIndex={0} onKeyDown={e => e.key === 'Enter' && flip()}>
-        <div className={`flashcard-inner ${flipped ? 'flipped' : ''}`}>
-          {/* Front */}
-          <div className="flashcard-face flashcard-front">
-            <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#aaa', marginBottom: '0.5rem' }}>
-              {word.theme} · Уровень {word.level}
+      {/* ── Card area (tap to flip) ── */}
+      <div
+        onClick={flip}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => e.key === 'Enter' && flip()}
+        aria-label="Нажмите, чтобы перевернуть"
+        style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          padding: '32px 24px', cursor: 'pointer', userSelect: 'none',
+          gap: 20,
+        }}
+      >
+        {!flipped ? (
+          <>
+            <div style={{
+              fontFamily: 'IM Fell English, serif',
+              fontSize: 'clamp(2.4rem, 8vw, 4rem)',
+              color: '#fff', textAlign: 'center', lineHeight: 1.2,
+            }}>
+              {word.greek}
             </div>
-            <div className="flashcard-word">{word.greek}</div>
-            <div style={{ fontSize: '0.9rem', color: '#aaa', fontStyle: 'italic' }}>{word.pos}</div>
-            <div className="flashcard-hint">Пробел или нажмите, чтобы открыть</div>
-          </div>
-
-          {/* Back */}
-          <div className="flashcard-face flashcard-back">
-            <div className="flashcard-translation">{word.ru}</div>
-            <div className="flashcard-pos">{word.pos}</div>
-            <div className="flashcard-example">
-              <div style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.9)' }}>{word.example}</div>
-              <div className="flashcard-example-ru">{word.exampleRu}</div>
+            <div style={{
+              color: 'rgba(255,255,255,0.45)', fontSize: '1rem',
+              fontStyle: 'italic',
+            }}>
+              {word.pos}
             </div>
-          </div>
-        </div>
+            <div style={{
+              marginTop: 16, color: 'rgba(255,255,255,0.35)',
+              fontSize: '0.9rem', letterSpacing: '0.05em',
+            }}>
+              нажмите, чтобы увидеть перевод
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{
+              fontFamily: 'IM Fell English, serif',
+              fontSize: 'clamp(1.6rem, 5vw, 2.4rem)',
+              color: 'rgba(255,255,255,0.55)', textAlign: 'center',
+              lineHeight: 1.2,
+            }}>
+              {word.greek}
+            </div>
+            <div style={{
+              width: 48, height: 2,
+              background: 'rgba(255,255,255,0.25)', borderRadius: 1,
+            }} />
+            <div style={{
+              fontFamily: 'Crimson Pro, serif',
+              fontSize: 'clamp(2rem, 7vw, 3.2rem)',
+              color: '#fff', textAlign: 'center', lineHeight: 1.3,
+              fontWeight: 500,
+            }}>
+              {word.ru}
+            </div>
+            {word.example ? (
+              <div style={{
+                marginTop: 8, color: 'rgba(255,255,255,0.5)',
+                fontSize: '1rem', textAlign: 'center', fontStyle: 'italic',
+                maxWidth: 480,
+              }}>
+                {word.example}
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
 
-      {/* Status buttons */}
-      <div className="flex justify-center gap-3 mt-4" style={{ flexWrap: 'wrap' }}>
-        <button
-          className="btn btn-success"
-          onClick={() => markStatus('known')}
-          title="Знаю (1)"
-          aria-label="Отметить как знаю"
-        >
-          🟢 Знаю <span className="kbd">1</span>
-        </button>
-        <button
-          className="btn btn-secondary"
-          onClick={() => markStatus('learning')}
-          title="Учу (2)"
-          aria-label="Отметить как учу"
-        >
-          🟡 Учу <span className="kbd">2</span>
-        </button>
-        <button
-          className="btn btn-primary"
-          onClick={() => markStatus('difficult')}
-          title="Сложное (3)"
-          aria-label="Отметить как сложное"
-        >
-          🔴 Сложное <span className="kbd">3</span>
-        </button>
+      {/* ── Status buttons ── */}
+      <div style={{ padding: '0 16px 16px', display: 'flex', gap: 10 }}>
+        {Object.entries(STATUS_COLORS).map(([status, { bg, label, key }]) => (
+          <button
+            key={status}
+            onClick={(e) => { e.stopPropagation(); markStatus(status); }}
+            style={{
+              flex: 1, padding: '16px 8px',
+              background: bg, color: '#fff',
+              border: 'none', borderRadius: 12,
+              fontSize: '1.05rem', fontFamily: 'Crimson Pro, serif',
+              fontWeight: 600, cursor: 'pointer',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 4,
+              transition: 'filter 0.15s, transform 0.1s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.12)'}
+            onMouseLeave={e => e.currentTarget.style.filter = ''}
+            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+            onMouseUp={e => e.currentTarget.style.transform = ''}
+          >
+            {label}
+            <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>[{key}]</span>
+          </button>
+        ))}
       </div>
 
-      {/* Navigation */}
-      <div className="flex justify-between items-center mt-4">
-        <button className="btn btn-ghost" onClick={handlePrev} aria-label="Предыдущее слово">
-          ← <span className="kbd">←</span>
+      {/* ── Bottom bar ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '8px 16px 20px',
+      }}>
+        <button
+          onClick={() => { onSkip(); setFlipped(false); }}
+          style={{
+            background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)',
+            border: 'none', borderRadius: 8, padding: '8px 16px',
+            fontFamily: 'Crimson Pro, serif', fontSize: '0.95rem', cursor: 'pointer',
+          }}
+        >
+          ← пропустить
         </button>
 
         <button
-          className="btn btn-ghost btn-sm"
           onClick={() => setAiWord(word)}
-          aria-label="Спросить AI"
+          style={{
+            background: 'transparent', color: 'rgba(255,255,255,0.5)',
+            border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8,
+            padding: '8px 14px', fontFamily: 'Crimson Pro, serif',
+            fontSize: '0.9rem', cursor: 'pointer',
+          }}
         >
-          🤖 Спросить AI
-        </button>
-
-        <button className="btn btn-ghost" onClick={handleNext} aria-label="Следующее слово">
-          <span className="kbd">→</span> →
+          🤖 AI
         </button>
       </div>
 
-      {/* Keyboard shortcuts hint */}
-      <div className="text-center mt-4 text-sm text-muted">
-        <span className="kbd">Пробел</span> переворот &nbsp;
-        <span className="kbd">←</span><span className="kbd">→</span> навигация &nbsp;
-        <span className="kbd">1</span><span className="kbd">2</span><span className="kbd">3</span> статус
-      </div>
-
-      {/* AI Panel */}
       {aiWord && <AIPanel word={aiWord} onClose={() => setAiWord(null)} />}
     </div>
   );

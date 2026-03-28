@@ -204,7 +204,7 @@ export default function App() {
       </nav>
 
       {/* Content */}
-      <div className="main">
+      <div className={activeMode === 'flashcard' && session ? '' : 'main'}>
         {activeMode === 'flashcard' && (session
           ? <FlashCard words={words} session={session} onWordStatus={setWordStatus} getWordStatus={getWordStatus} onAnswer={handleAnswer} onSkip={handleSkip} onEnd={handleEnd} />
           : <Welcome mode="flashcard" onStart={() => setShowModal(true)} known={known} />
