@@ -18,11 +18,11 @@ const MODES = [
 
 /* ── Session config modal ─────────────────────────────────── */
 function SessionModal({ mode, onStart, onClose }) {
-  const [theme, setTheme]       = useState('all');
-  const [level, setLevel]       = useState('all');
-  const [count, setCount]       = useState(20);
-  const [direction, setDir]     = useState('gr-ru');
-  const [timer, setTimer]       = useState(false);
+  const [theme, setTheme]   = useState('all');
+  const [level, setLevel]   = useState('all');
+  const [count, setCount]   = useState(20);
+  const [direction, setDir] = useState('gr-ru');
+  const [timer, setTimer]   = useState(false);
 
   const start = () => {
     let pool = VOCABULARY;
@@ -35,45 +35,55 @@ function SessionModal({ mode, onStart, onClose }) {
   };
 
   const Opt = ({ val, cur, set, label }) => (
-    <button
-      onClick={() => set(val)}
-      style={{
-        padding: '6px 14px', borderRadius: 6, border: '1.5px solid',
-        borderColor: cur === val ? 'var(--indigo)' : 'var(--parchment-dark)',
-        background: cur === val ? 'var(--indigo)' : 'transparent',
-        color: cur === val ? '#fff' : 'var(--ink)',
-        cursor: 'pointer', fontFamily: 'Crimson Pro, serif', fontSize: '0.95rem',
-      }}
-    >{label}</button>
+    <button onClick={() => set(val)} style={{
+      padding: '8px 16px', borderRadius: 8, border: '1.5px solid',
+      borderColor: cur === val ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)',
+      background: cur === val ? 'rgba(255,255,255,0.2)' : 'transparent',
+      color: cur === val ? '#fff' : 'rgba(255,255,255,0.6)',
+      cursor: 'pointer', fontFamily: 'Crimson Pro, serif', fontSize: '1rem',
+      transition: 'all 0.15s',
+    }}>{label}</button>
   );
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <h2 style={{ fontFamily: 'IM Fell English, serif', color: 'var(--terracotta)', marginBottom: 20 }}>
-          {{ flashcard:'🃏 Карточки', quiz:'❓ Тест', dictation:'🎧 Диктант' }[mode]}
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 100,
+    }}>
+      <div style={{
+        background: 'var(--indigo)', borderRadius: 16, padding: '32px 28px',
+        maxWidth: 460, width: '90%', maxHeight: '90vh', overflowY: 'auto',
+        boxShadow: '0 16px 60px rgba(0,0,0,0.5)',
+        border: '1px solid rgba(255,255,255,0.1)',
+      }}>
+        <h2 style={{
+          fontFamily: 'IM Fell English, serif', fontSize: '1.8rem',
+          color: '#fff', marginBottom: 24, textAlign: 'center',
+        }}>
+          {{ flashcard: '🃏 Карточки', quiz: '❓ Тест', dictation: '🎧 Диктант' }[mode]}
         </h2>
 
-        <label style={lbl}>Тема</label>
+        <div style={lbl}>Тема</div>
         <select value={theme} onChange={e => setTheme(e.target.value)} style={sel}>
           <option value="all">Все темы</option>
           {THEMES.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
 
-        <label style={lbl}>Уровень</label>
+        <div style={lbl}>Уровень</div>
         <div style={row}>
           {[['all','Все'],['1','1'],['2','2'],['3','3']].map(([v,l]) =>
             <Opt key={v} val={v} cur={level} set={setLevel} label={l} />)}
         </div>
 
-        <label style={lbl}>Слов в сессии</label>
+        <div style={lbl}>Слов в сессии</div>
         <div style={row}>
           {[10,20,50,100,'all'].map(c =>
             <Opt key={c} val={c} cur={count} set={setCount} label={c === 'all' ? 'Все' : c} />)}
         </div>
 
         {mode !== 'dictation' && <>
-          <label style={lbl}>Направление</label>
+          <div style={lbl}>Направление</div>
           <div style={row}>
             <Opt val="gr-ru" cur={direction} set={setDir} label="Гр → Рус" />
             <Opt val="ru-gr" cur={direction} set={setDir} label="Рус → Гр" />
@@ -81,46 +91,127 @@ function SessionModal({ mode, onStart, onClose }) {
         </>}
 
         {mode === 'quiz' && <>
-          <label style={lbl}>Таймер</label>
+          <div style={lbl}>Таймер</div>
           <div style={row}>
             <Opt val={false} cur={timer} set={setTimer} label="Без таймера" />
             <Opt val={true}  cur={timer} set={setTimer} label="10 секунд" />
           </div>
         </>}
 
-        <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-          <button className="btn-secondary" onClick={onClose} style={btnBase}>Отмена</button>
-          <button className="btn-primary"   onClick={start}   style={{ ...btnBase, flex: 1 }}>Начать →</button>
+        <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
+          <button onClick={onClose} style={{
+            flex: 0, padding: '12px 20px', borderRadius: 10,
+            background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            fontFamily: 'Crimson Pro, serif', fontSize: '1rem', cursor: 'pointer',
+          }}>Отмена</button>
+          <button onClick={start} style={{
+            flex: 1, padding: '12px 20px', borderRadius: 10,
+            background: 'var(--terracotta)', color: '#fff', border: 'none',
+            fontFamily: 'Crimson Pro, serif', fontSize: '1.1rem',
+            fontWeight: 600, cursor: 'pointer',
+          }}>Начать →</button>
         </div>
       </div>
     </div>
   );
 }
 
-const lbl    = { display: 'block', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--indigo)', marginTop: 16, marginBottom: 6 };
-const row    = { display: 'flex', gap: 8, flexWrap: 'wrap' };
-const sel    = { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1.5px solid var(--parchment-dark)', fontFamily: 'Crimson Pro, serif', fontSize: '1rem', background: 'var(--parchment)' };
-const btnBase = { padding: '10px 20px', borderRadius: 6, fontSize: '1rem', cursor: 'pointer', border: 'none', fontFamily: 'Crimson Pro, serif' };
+const lbl = { fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
+  letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', marginTop: 20, marginBottom: 8 };
+const row = { display: 'flex', gap: 8, flexWrap: 'wrap' };
+const sel = {
+  width: '100%', padding: '9px 12px', borderRadius: 8,
+  border: '1.5px solid rgba(255,255,255,0.2)',
+  background: 'rgba(255,255,255,0.08)', color: '#fff',
+  fontFamily: 'Crimson Pro, serif', fontSize: '1rem',
+};
 
 /* ── Welcome screen ───────────────────────────────────────── */
 function Welcome({ mode, onStart, known }) {
   const info = {
-    flashcard: { icon: '🃏', title: 'Карточки',  desc: 'Переворачивайте карточки и оценивайте своё знание слова.' },
-    quiz:      { icon: '❓', title: 'Тест',       desc: 'Выберите правильный перевод из 4 вариантов.' },
-    dictation: { icon: '🎧', title: 'Диктант',    desc: 'Читайте по-русски — пишите по-гречески.' },
+    flashcard: { title: 'Карточки',  desc: 'Переворачивайте карточки и оценивайте своё знание слова.' },
+    quiz:      { title: 'Тест',      desc: 'Выберите правильный перевод из 4 вариантов.' },
+    dictation: { title: 'Диктант',   desc: 'Читайте по-русски — пишите по-гречески.' },
   };
-  const { icon, title, desc } = info[mode] || {};
+  const { title, desc } = info[mode] || {};
+  const remaining = VOCABULARY.length - known;
+
   return (
-    <div style={{ maxWidth: 520, margin: '60px auto', textAlign: 'center' }}>
-      <div style={{ fontSize: '4rem', marginBottom: 12 }}>{icon}</div>
-      <h2 style={{ fontFamily: 'IM Fell English, serif', fontSize: '2.2rem', color: 'var(--terracotta)', marginBottom: 12 }}>{title}</h2>
-      <p style={{ fontSize: '1.1rem', color: '#666', marginBottom: 32 }}>{desc}</p>
-      <div style={{ display: 'flex', gap: 32, justifyContent: 'center', marginBottom: 32 }}>
-        <div><div style={{ fontFamily: 'IM Fell English, serif', fontSize: '2rem', color: 'var(--olive)' }}>{known}</div><div style={{ fontSize: '0.85rem', color: '#888' }}>знаю</div></div>
-        <div><div style={{ fontFamily: 'IM Fell English, serif', fontSize: '2rem', color: 'var(--indigo)' }}>{VOCABULARY.length - known}</div><div style={{ fontSize: '0.85rem', color: '#888' }}>осталось</div></div>
-        <div><div style={{ fontFamily: 'IM Fell English, serif', fontSize: '2rem', color: 'var(--terracotta)' }}>{VOCABULARY.length}</div><div style={{ fontSize: '0.85rem', color: '#888' }}>всего</div></div>
+    <div style={{
+      minHeight: 'calc(100vh - 56px)',
+      background: 'var(--indigo)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '40px 24px', textAlign: 'center',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Omega watermark */}
+      <div style={{
+        position: 'absolute', bottom: -80, right: -40,
+        fontFamily: 'IM Fell English, serif', fontSize: 320,
+        color: 'rgba(255,255,255,0.04)', pointerEvents: 'none',
+        lineHeight: 1, userSelect: 'none',
+      }}>Ω</div>
+
+      {/* Title */}
+      <div style={{
+        fontFamily: 'IM Fell English, serif',
+        fontSize: 'clamp(2.4rem, 8vw, 4rem)',
+        color: '#fff', marginBottom: 12, lineHeight: 1.1,
+      }}>
+        {title}
       </div>
-      <button className="btn-primary" onClick={onStart} style={{ ...btnBase, fontSize: '1.2rem', padding: '12px 40px' }}>
+      <div style={{
+        color: 'rgba(255,255,255,0.55)', fontSize: '1.1rem',
+        marginBottom: 48, maxWidth: 380,
+      }}>
+        {desc}
+      </div>
+
+      {/* Stats */}
+      <div style={{
+        display: 'flex', gap: 0, marginBottom: 48,
+        background: 'rgba(255,255,255,0.07)',
+        borderRadius: 16, overflow: 'hidden',
+        border: '1px solid rgba(255,255,255,0.1)',
+      }}>
+        {[
+          { val: known,              label: 'знаю',    color: '#22c55e' },
+          { val: remaining,          label: 'осталось', color: '#fff' },
+          { val: VOCABULARY.length,  label: 'всего',   color: 'rgba(255,255,255,0.5)' },
+        ].map(({ val, label, color }, i) => (
+          <div key={label} style={{
+            padding: '20px 32px', textAlign: 'center',
+            borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+          }}>
+            <div style={{
+              fontFamily: 'IM Fell English, serif',
+              fontSize: '2.2rem', color, lineHeight: 1,
+            }}>{val}</div>
+            <div style={{
+              fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)',
+              marginTop: 4, letterSpacing: '0.05em',
+            }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA button */}
+      <button onClick={onStart} style={{
+        padding: '16px 56px', borderRadius: 12,
+        background: 'var(--terracotta)', color: '#fff',
+        border: 'none', fontSize: '1.3rem',
+        fontFamily: 'Crimson Pro, serif', fontWeight: 600,
+        cursor: 'pointer', letterSpacing: '0.02em',
+        boxShadow: '0 4px 20px rgba(196,82,42,0.4)',
+        transition: 'filter 0.15s, transform 0.1s',
+      }}
+        onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
+        onMouseLeave={e => e.currentTarget.style.filter = ''}
+        onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+        onMouseUp={e => e.currentTarget.style.transform = ''}
+      >
         Начать сессию →
       </button>
     </div>
@@ -204,7 +295,7 @@ export default function App() {
       </nav>
 
       {/* Content */}
-      <div className={activeMode === 'flashcard' && session ? '' : 'main'}>
+      <div className={activeMode === 'words' || activeMode === 'stats' || (session && activeMode !== 'flashcard') ? 'main' : ''}>
         {activeMode === 'flashcard' && (session
           ? <FlashCard words={words} session={session} onWordStatus={setWordStatus} getWordStatus={getWordStatus} onAnswer={handleAnswer} onSkip={handleSkip} onEnd={handleEnd} />
           : <Welcome mode="flashcard" onStart={() => setShowModal(true)} known={known} />

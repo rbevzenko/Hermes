@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import AIPanel from './AIPanel';
+import { useGreekSpeech } from '../hooks/useGreekSpeech';
 
 const STATUS_COLORS = {
   known:     { bg: '#22c55e', label: '✓ Знаю',    key: '1' },
@@ -10,6 +11,7 @@ const STATUS_COLORS = {
 export default function FlashCard({ words, onWordStatus, getWordStatus, session, onAnswer, onSkip, onEnd }) {
   const [flipped, setFlipped] = useState(false);
   const [aiWord, setAiWord]   = useState(null);
+  const { speak, isSupported } = useGreekSpeech();
 
   const currentIndex = session?.currentIndex ?? 0;
   const word  = words[currentIndex];
@@ -25,7 +27,10 @@ export default function FlashCard({ words, onWordStatus, getWordStatus, session,
     setFlipped(false);
   }, [word, onWordStatus, onAnswer]);
 
-  useEffect(() => { setFlipped(false); }, [currentIndex]);
+  useEffect(() => {
+    setFlipped(false);
+    if (word) speak(word.greek);
+  }, [currentIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const handler = (e) => {
@@ -132,6 +137,18 @@ export default function FlashCard({ words, onWordStatus, getWordStatus, session,
             }}>
               {word.pos}
             </div>
+            {isSupported && (
+              <button
+                onClick={e => { e.stopPropagation(); speak(word.greek); }}
+                title="Произнести"
+                style={{
+                  marginTop: 12, background: 'rgba(255,255,255,0.12)',
+                  border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8,
+                  color: 'rgba(255,255,255,0.7)', padding: '6px 16px',
+                  fontSize: '1.1rem', cursor: 'pointer',
+                }}
+              >🔊</button>
+            )}
             <div style={{
               marginTop: 16, color: 'rgba(255,255,255,0.35)',
               fontSize: '0.9rem', letterSpacing: '0.05em',
