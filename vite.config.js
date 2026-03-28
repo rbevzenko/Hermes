@@ -6,8 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['omega.svg', 'icon-192.png', 'icon-512.png'],
+      selfDestroying: true,
       manifest: {
         name: 'Λεξιλόγιο — Греческий словарь',
         short_name: 'Λεξιλόγιο',
