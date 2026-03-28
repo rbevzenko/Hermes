@@ -3,6 +3,22 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
+// Force-clear stale SW caches when app version changes.
+// Bump APP_VERSION whenever a deploy breaks due to stale SW.
+const APP_VERSION = '3';
+(function clearStaleSWCache() {
+  if (!('serviceWorker' in navigator)) return;
+  if (sessionStorage.getItem('appV') === APP_VERSION) return;
+  // Mark first so we don't loop if reload fails
+  sessionStorage.setItem('appV', APP_VERSION);
+  navigator.serviceWorker.getRegistrations()
+    .then(regs => Promise.all(regs.map(r => r.unregister())))
+    .then(() => ('caches' in window) ? caches.keys() : [])
+    .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+    .then(() => location.reload())
+    .catch(() => {}); // silent fail — app still works without SW
+})();
+
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
