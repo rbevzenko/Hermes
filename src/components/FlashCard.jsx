@@ -18,7 +18,12 @@ export default function FlashCard({ words, onWordStatus, getWordStatus, session,
   const total = words.length;
   const progress = total > 0 ? (currentIndex / total) * 100 : 0;
 
-  const flip = useCallback(() => setFlipped(f => !f), []);
+  const flip = useCallback(() => {
+    setFlipped(f => {
+      if (!f && word) speak(word.greek); // speak on reveal (user interaction)
+      return !f;
+    });
+  }, [word, speak]);
 
   const markStatus = useCallback((status) => {
     if (!word) return;
@@ -27,10 +32,7 @@ export default function FlashCard({ words, onWordStatus, getWordStatus, session,
     setFlipped(false);
   }, [word, onWordStatus, onAnswer]);
 
-  useEffect(() => {
-    setFlipped(false);
-    if (word) speak(word.greek);
-  }, [currentIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setFlipped(false); }, [currentIndex]);
 
   useEffect(() => {
     const handler = (e) => {
