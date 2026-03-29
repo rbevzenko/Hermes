@@ -2,8 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths-ignore:
       - 'index.html'
       - 'assets/**'
@@ -18,31 +17,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: '20'
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm install
 
-      - name: Build
-        run: npm run build
+      - run: npm run build
 
       - name: Commit built files to main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Copy built files to repo root
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
           cp -r dist/assets ./assets
           cp dist/index.html ./index.html
-          # Copy public files (icons, etc)
-          cp dist/*.svg . 2>/dev/null || true
-          cp dist/*.png . 2>/dev/null || true
-          cp dist/*.webmanifest . 2>/dev/null || true
-          git add index.html assets/ *.svg *.png *.webmanifest 2>/dev/null || git add index.html assets/
-          git diff --staged --quiet || git commit -m "build: update static site [skip ci]"
-          git push origin main
+          cp dist/*.svg dist/*.png dist/*.ico dist/*.webmanifest . 2>/dev/null || true
+          git add index.html assets/
+          git diff --staged --quiet && echo "No changes to commit" || (git commit -m "build: update static site [skip ci]" && git push origin HEAD:main)
