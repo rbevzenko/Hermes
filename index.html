@@ -18,20 +18,19 @@
     <link rel="stylesheet" crossorigin href="/Hermes/assets/style.ClE8vwr6.css">
   </head>
   <body>
-    <div id="root"></div>
-    <div id="js-error-fallback" style="display:none;font-family:monospace;padding:24px;background:#F5ECD7;color:#1A1208;max-width:700px;margin:40px auto;border-radius:8px;border:2px solid #C4522A;">
-      <b style="color:#C4522A">JavaScript error:</b>
-      <pre id="js-error-msg" style="margin-top:8px;white-space:pre-wrap;word-break:break-word"></pre>
-    </div>
+    <!-- Kill any lingering service workers immediately -->
     <script>
-      window.addEventListener('error', function(e) {
-        document.getElementById('js-error-fallback').style.display = 'block';
-        document.getElementById('js-error-msg').textContent = (e.message || '') + '\n' + (e.filename || '') + ':' + e.lineno;
-      });
-      window.addEventListener('unhandledrejection', function(e) {
-        document.getElementById('js-error-fallback').style.display = 'block';
-        document.getElementById('js-error-msg').textContent = String(e.reason);
-      });
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          regs.forEach(function(r) { r.unregister(); });
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(keys) {
+          keys.forEach(function(k) { caches.delete(k); });
+        });
+      }
     </script>
+    <div id="root"></div>
   </body>
 </html>
