@@ -3,9 +3,8 @@ import AIPanel from './AIPanel';
 import { useGreekSpeech } from '../hooks/useGreekSpeech';
 
 const STATUS_COLORS = {
-  known:     { bg: '#22c55e', label: '✓ Знаю',    key: '1' },
-  learning:  { bg: '#f59e0b', label: '~ Учу',     key: '2' },
-  difficult: { bg: '#ef4444', label: '✗ Сложное', key: '3' },
+  known:    { bg: '#22c55e', label: '✓ Знаю',     key: '1' },
+  learning: { bg: '#ef4444', label: '✗ Не знаю',  key: '2' },
 };
 
 export default function FlashCard({ words, onWordStatus, getWordStatus, session, onAnswer, onSkip, onEnd }) {
@@ -28,7 +27,7 @@ export default function FlashCard({ words, onWordStatus, getWordStatus, session,
   const markStatus = useCallback((status) => {
     if (!word) return;
     onWordStatus(word.id, status);
-    onAnswer(word.id, status !== 'difficult');
+    onAnswer(word.id, status === 'known');
     setFlipped(false);
   }, [word, onWordStatus, onAnswer]);
 
@@ -40,7 +39,6 @@ export default function FlashCard({ words, onWordStatus, getWordStatus, session,
       if (e.key === ' ')          { e.preventDefault(); flip(); }
       else if (e.key === '1')     markStatus('known');
       else if (e.key === '2')     markStatus('learning');
-      else if (e.key === '3')     markStatus('difficult');
       else if (e.key === 'ArrowRight') { onAnswer(word?.id, true); setFlipped(false); }
       else if (e.key === 'ArrowLeft')  { onSkip(); setFlipped(false); }
     };
