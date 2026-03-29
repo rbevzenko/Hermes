@@ -128,7 +128,7 @@ const sel = {
 };
 
 /* ── Welcome screen ───────────────────────────────────────── */
-function Welcome({ mode, onStart, known }) {
+function Welcome({ mode, onStart, onRepeat, known, learning }) {
   const info = {
     flashcard: { title: 'Карточки',  desc: 'Переворачивайте карточки и оценивайте своё знание слова.' },
     quiz:      { title: 'Тест',      desc: 'Выберите правильный перевод из 4 вариантов.' },
@@ -197,23 +197,43 @@ function Welcome({ mode, onStart, known }) {
         ))}
       </div>
 
-      {/* CTA button */}
-      <button onClick={onStart} style={{
-        padding: '16px 56px', borderRadius: 12,
-        background: 'var(--terracotta)', color: '#fff',
-        border: 'none', fontSize: '1.3rem',
-        fontFamily: 'Crimson Pro, serif', fontWeight: 600,
-        cursor: 'pointer', letterSpacing: '0.02em',
-        boxShadow: '0 4px 20px rgba(196,82,42,0.4)',
-        transition: 'filter 0.15s, transform 0.1s',
-      }}
-        onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
-        onMouseLeave={e => e.currentTarget.style.filter = ''}
-        onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-        onMouseUp={e => e.currentTarget.style.transform = ''}
-      >
-        Начать сессию →
-      </button>
+      {/* CTA buttons */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+        <button onClick={onStart} style={{
+          padding: '16px 56px', borderRadius: 12,
+          background: 'var(--terracotta)', color: '#fff',
+          border: 'none', fontSize: '1.3rem',
+          fontFamily: 'Crimson Pro, serif', fontWeight: 600,
+          cursor: 'pointer', letterSpacing: '0.02em',
+          boxShadow: '0 4px 20px rgba(196,82,42,0.4)',
+          transition: 'filter 0.15s, transform 0.1s',
+        }}
+          onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
+          onMouseLeave={e => e.currentTarget.style.filter = ''}
+          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+          onMouseUp={e => e.currentTarget.style.transform = ''}
+        >
+          Начать сессию →
+        </button>
+
+        {mode === 'flashcard' && onRepeat && learning > 0 && (
+          <button onClick={onRepeat} style={{
+            padding: '13px 40px', borderRadius: 12,
+            background: 'rgba(239,68,68,0.18)', color: '#fca5a5',
+            border: '1.5px solid rgba(239,68,68,0.4)',
+            fontSize: '1.1rem', fontFamily: 'Crimson Pro, serif',
+            fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em',
+            transition: 'filter 0.15s, transform 0.1s',
+          }}
+            onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.15)'}
+            onMouseLeave={e => e.currentTarget.style.filter = ''}
+            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+            onMouseUp={e => e.currentTarget.style.transform = ''}
+          >
+            🔁 Повторить {learning} слов
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -229,7 +249,8 @@ export default function App() {
   const [sessionHistory]                = useSessionHistory();
   const { session, startSession, recordAnswer, skipWord, nextWord, endSession } = useSession();
 
-  const known = Object.values(wordStatus).filter(s => s === 'known').length;
+  const known    = Object.values(wordStatus).filter(s => s === 'known').length;
+  const learning = Object.values(wordStatus).filter(s => s === 'learning').length;
 
   const goMode = useCallback(id => {
     if (['flashcard', 'quiz', 'dictation'].includes(id)) {
@@ -254,6 +275,15 @@ export default function App() {
   const handleSkip = useCallback(() => { skipWord(); nextWord(); }, [skipWord, nextWord]);
 
   const handleEnd = useCallback(() => { endSession(); setSessionCfg(null); }, [endSession]);
+
+  const handleRepeat = useCallback(() => {
+    const pool = VOCABULARY.filter(w => wordStatus[w.id] === 'learning');
+    const words = [...pool].sort(() => Math.random() - 0.5);
+    if (!words.length) return;
+    setSessionCfg({ words, direction: 'gr-ru', timer: false });
+    startSession('flashcard', words);
+    setActiveMode('flashcard');
+  }, [wordStatus, startSession]);
 
   const handleReset = useCallback(() => {
     if (confirm('Сбросить весь прогресс?')) {
@@ -298,15 +328,15 @@ export default function App() {
       <div className={activeMode === 'words' || activeMode === 'stats' || (session && activeMode !== 'flashcard') ? 'main' : ''}>
         {activeMode === 'flashcard' && (session
           ? <FlashCard words={words} session={session} onWordStatus={setWordStatus} getWordStatus={getWordStatus} onAnswer={handleAnswer} onSkip={handleSkip} onEnd={handleEnd} />
-          : <Welcome mode="flashcard" onStart={() => setShowModal(true)} known={known} />
+          : <Welcome mode="flashcard" onStart={() => setShowModal(true)} onRepeat={handleRepeat} known={known} learning={learning} />
         )}
         {activeMode === 'quiz' && (session
           ? <QuizMode words={words} allWords={VOCABULARY} direction={sessionCfg?.direction ?? 'gr-ru'} timerEnabled={sessionCfg?.timer ?? false} session={session} onAnswer={handleAnswer} onSkip={handleSkip} onEnd={handleEnd} getWordStatus={getWordStatus} />
-          : <Welcome mode="quiz" onStart={() => setShowModal(true)} known={known} />
+          : <Welcome mode="quiz" onStart={() => setShowModal(true)} known={known} learning={learning} />
         )}
         {activeMode === 'dictation' && (session
           ? <DictationMode words={words} session={session} onAnswer={handleAnswer} onSkip={handleSkip} onEnd={handleEnd} />
-          : <Welcome mode="dictation" onStart={() => setShowModal(true)} known={known} />
+          : <Welcome mode="dictation" onStart={() => setShowModal(true)} known={known} learning={learning} />
         )}
         {activeMode === 'words' && <WordManager wordStatus={wordStatus} setWordStatus={setWordStatus} />}
         {activeMode === 'stats' && <Statistics wordStatus={wordStatus} sessionHistory={sessionHistory} onResetProgress={handleReset} />}
